@@ -34,17 +34,6 @@ basically if a computer is broken, that's my problem to solve.
 
 ---
 
-## tools i actually use
-
-```
-OS & Software    → Windows 10/11, Ubuntu, Arch Linux, OS Deployment, BIOS/UEFI
-Hardware         → Laptop Repair, PC Assembly, Component Diagnosis, HDD/SSD
-Networking       → LAN/WAN Setup, Cable Installation, Wi-Fi, TCP/IP Troubleshooting
-Scripting & Dev  → Python, Bash, HTML/CSS, React, Next.js
-```
-
----
-
 ## reach me
 
 - 📧 adityafmh@proton.me
