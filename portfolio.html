@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aditya Firmanshah</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --green: #00ff88;
+    --green-dim: #00cc66;
+    --green-dark: #003322;
+    --amber: #ffb700;
+    --red: #ff4466;
+    --blue: #44aaff;
+    --cyan: #00ddcc;
+    --bg: #0a0e0a;
+    --bg2: #0f1510;
+    --bg3: #141a14;
+    --border: #1a2e1a;
+    --text: #c8e8c8;
+    --muted: #5a7a5a;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'JetBrains Mono', 'Share Tech Mono', monospace;
+    font-size: 14px;
+    line-height: 1.7;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,136,0.015) 2px, rgba(0,255,136,0.015) 4px);
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* ── Boot screen ── */
+  #boot {
+    position: fixed; inset: 0;
+    background: #000; z-index: 1000;
+    display: flex; flex-direction: column; justify-content: center;
+    padding: 1.5rem 1.2rem;
+    font-family: 'JetBrains Mono', monospace;
+    transition: opacity 0.8s;
+    overflow: hidden;
+  }
+  #boot.hidden { opacity: 0; pointer-events: none; }
+  .boot-line { color: var(--green); font-size: 12px; opacity: 0; animation: bootLine 0.05s forwards; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .boot-line.dim { color: var(--muted); }
+  .boot-line.amber { color: var(--amber); }
+  .boot-line.blue { color: var(--blue); }
+  @keyframes bootLine { to { opacity: 1; } }
+
+  /* ── Nav ── */
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 0;
+  }
+  .nav-top {
+    display: flex; align-items: center;
+    padding: 0.5rem 1rem;
+    gap: 0.5rem;
+  }
+  .nav-title {
+    color: var(--green); font-size: 13px; font-weight: 600;
+    white-space: nowrap; flex-shrink: 0;
+  }
+  .nav-title span { color: var(--muted); font-weight: 300; }
+  .nav-status {
+    margin-left: auto; font-size: 11px;
+    color: var(--muted); white-space: nowrap; flex-shrink: 0;
+  }
+  .nav-status span { color: var(--green); }
+  .nav-links-row {
+    display: flex; flex-wrap: wrap; gap: 0;
+    border-top: 1px solid var(--border);
+    padding: 0.25rem 0.5rem;
+    list-style: none;
+  }
+  .nav-links-row a {
+    color: var(--muted); text-decoration: none;
+    font-size: 11px; padding: 0.25rem 0.6rem;
+    border: 1px solid transparent; transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .nav-links-row a::before { content: './'; color: var(--green-dim); }
+  .nav-links-row a:hover { color: var(--green); border-color: var(--border); background: var(--bg3); }
+
+  /* ── Main ── */
+  main { max-width: 900px; margin: 0 auto; padding: 1.5rem 1rem 4rem; }
+
+  /* ── Terminal chrome ── */
+  .terminal {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 6px; margin-bottom: 1.5rem; overflow: hidden;
+  }
+  .terminal-bar {
+    background: var(--bg3); border-bottom: 1px solid var(--border);
+    padding: 0.5rem 0.8rem; display: flex; align-items: center; gap: 0.4rem;
+  }
+  .dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .dot-red { background: #ff5f57; }
+  .dot-yellow { background: #ffbd2e; }
+  .dot-green { background: #28c940; }
+  .terminal-title { margin-left: 0.4rem; font-size: 11px; color: var(--muted); flex: 1; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .terminal-body { padding: 1rem; overflow-x: hidden; }
+
+  /* ── Prompt ── */
+  .prompt { display: flex; flex-wrap: wrap; align-items: baseline; margin-bottom: 0.3rem; gap: 0; }
+  .ps1 { white-space: nowrap; color: var(--muted); font-size: 13px; }
+  .ps1-user { color: var(--green); font-weight: 600; }
+  .ps1-at { color: var(--muted); }
+  .ps1-host { color: var(--blue); font-weight: 600; }
+  .ps1-path { color: var(--amber); }
+  .ps1-dollar { color: var(--text); }
+  .cmd { color: var(--text); font-size: 13px; word-break: break-all; }
+  .cmd-name { color: var(--green); }
+  .cmd-flag { color: var(--amber); }
+  .cmd-arg { color: var(--cyan); }
+  .output { padding: 0.5rem 0 0.8rem; }
+
+  /* ── Hero ── */
+  .hero-ascii {
+    color: var(--green); font-size: 7.5px; line-height: 1.15;
+    margin-bottom: 1rem; white-space: pre; opacity: 0.75;
+    overflow-x: auto; display: block;
+  }
+  .hero-name { font-size: 22px; font-weight: 700; color: var(--green); letter-spacing: -0.5px; }
+  .hero-role { font-size: 12px; color: var(--amber); margin: 0.3rem 0 0.8rem; word-break: break-word; }
+  .hero-meta { font-size: 12px; color: var(--muted); margin-bottom: 0.3rem; }
+  .hero-meta strong { color: var(--text); }
+
+  .cursor {
+    display: inline-block; width: 8px; height: 1em;
+    background: var(--green); vertical-align: text-bottom;
+    animation: blink 1s step-end infinite; margin-left: 2px;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  /* ── Stats ── */
+  .stat-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.8rem; margin-top: 0.8rem; }
+  .stat { background: var(--bg3); border: 1px solid var(--border); padding: 0.7rem 0.8rem; border-radius: 4px; }
+  .stat-num { font-size: 20px; font-weight: 700; color: var(--green); line-height: 1; }
+  .stat-label { font-size: 10px; color: var(--muted); margin-top: 2px; }
+
+  /* ── Skills ── */
+  .skills-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.8rem; margin-top: 0.8rem; }
+  .skill-category { background: var(--bg3); border: 1px solid var(--border); border-left: 3px solid var(--green); padding: 0.8rem; border-radius: 0 4px 4px 0; }
+  .skill-category.amber { border-left-color: var(--amber); }
+  .skill-category.blue { border-left-color: var(--blue); }
+  .skill-category.cyan { border-left-color: var(--cyan); }
+  .skill-cat-title { font-size: 10px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 0.5rem; }
+  .skill-tag { display: inline-block; font-size: 10px; color: var(--text); background: rgba(0,255,136,0.06); border: 1px solid var(--border); padding: 2px 6px; border-radius: 2px; margin: 2px 2px 2px 0; }
+
+  /* ── Skill bars ── */
+  .skill-bar { margin-bottom: 0.6rem; }
+  .skill-bar-label { display: flex; justify-content: space-between; font-size: 11px; color: var(--text); margin-bottom: 3px; gap: 0.5rem; }
+  .skill-bar-label span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .skill-bar-track { height: 4px; background: var(--bg3); border: 1px solid var(--border); overflow: hidden; }
+  .skill-bar-fill { height: 100%; background: var(--green); transform: scaleX(0); transform-origin: left; transition: transform 1s cubic-bezier(0.4,0,0.2,1); }
+  .skill-bar-fill.amber { background: var(--amber); }
+  .skill-bar-fill.blue { background: var(--blue); }
+
+  /* ── Timeline ── */
+  .timeline { padding-left: 0.8rem; }
+  .timeline-item { position: relative; padding-left: 1.2rem; padding-bottom: 1.5rem; border-left: 1px solid var(--border); }
+  .timeline-item::before { content: '▶'; position: absolute; left: -7px; top: 2px; font-size: 10px; color: var(--green); background: var(--bg2); padding: 2px 0; }
+  .timeline-item:last-child { border-left-color: transparent; }
+  .tl-date { font-size: 10px; color: var(--amber); font-weight: 600; letter-spacing: 1px; }
+  .tl-title { font-size: 14px; font-weight: 600; color: var(--green); margin: 0.2rem 0; }
+  .tl-company { font-size: 11px; color: var(--blue); margin-bottom: 0.5rem; word-break: break-word; }
+  .tl-desc { font-size: 12px; color: var(--text); line-height: 1.6; }
+  .tl-tags { margin-top: 0.5rem; }
+
+  /* ── Certs ── */
+  .certs-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.7rem; margin-top: 0.5rem; }
+  .cert-card { background: var(--bg3); border: 1px solid var(--border); padding: 0.8rem; border-radius: 4px; position: relative; overflow: hidden; transition: border-color 0.2s; }
+  .cert-card:hover { border-color: var(--green); }
+  .cert-card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 2px; background: var(--green); opacity: 0.4; }
+  .cert-card.amber::before { background: var(--amber); }
+  .cert-card.blue::before { background: var(--blue); }
+  .cert-badge { font-size: 20px; margin-bottom: 0.4rem; }
+  .cert-name { font-size: 12px; font-weight: 600; color: var(--green); margin-bottom: 0.2rem; }
+  .cert-card.amber .cert-name { color: var(--amber); }
+  .cert-card.blue .cert-name { color: var(--blue); }
+  .cert-issuer { font-size: 10px; color: var(--muted); }
+  .cert-year { font-size: 10px; color: var(--text); margin-top: 0.3rem; }
+
+  /* ── Contact ── */
+  .contact-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0.7rem; margin-top: 0.5rem; }
+  .contact-item { display: flex; align-items: center; gap: 0.7rem; background: var(--bg3); border: 1px solid var(--border); padding: 0.7rem 0.8rem; border-radius: 4px; text-decoration: none; transition: all 0.15s; min-width: 0; }
+  .contact-item:hover { border-color: var(--green); background: rgba(0,255,136,0.04); }
+  .contact-icon { font-size: 16px; width: 22px; text-align: center; flex-shrink: 0; }
+  .contact-label { font-size: 10px; color: var(--muted); }
+  .contact-value { font-size: 11px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* ── Badges ── */
+  .badge { display: inline-block; font-size: 9px; padding: 2px 6px; border-radius: 2px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; white-space: nowrap; }
+  .badge-green { background: rgba(0,255,136,0.12); color: var(--green); border: 1px solid rgba(0,255,136,0.25); }
+  .badge-amber { background: rgba(255,183,0,0.12); color: var(--amber); border: 1px solid rgba(255,183,0,0.25); }
+  .badge-blue { background: rgba(68,170,255,0.12); color: var(--blue); border: 1px solid rgba(68,170,255,0.25); }
+  .badge-red { background: rgba(255,68,102,0.12); color: var(--red); border: 1px solid rgba(255,68,102,0.25); }
+
+  .comment { color: var(--muted); font-size: 11px; font-style: italic; }
+  .comment::before { content: '# '; }
+
+  footer { border-top: 1px solid var(--border); padding: 1.2rem 1rem; text-align: center; font-size: 10px; color: var(--muted); word-break: break-word; }
+  footer span { color: var(--green); }
+
+  /* ── Projects ── */
+  .projects-group { margin-bottom: 1.2rem; }
+  .projects-group-label {
+    font-size: 10px; font-weight: 600; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 1.5px;
+    display: flex; align-items: center; gap: 0.5rem;
+    margin-bottom: 0.6rem;
+  }
+  .projects-group-label::before { content: '▸'; color: var(--green); font-size: 9px; }
+  .projects-group-label.fun::before { color: var(--blue); }
+  .projects-group-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  .projects-grid { display: grid; grid-template-columns: 1fr; gap: 0.8rem; }
+  .project-card {
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 4px; padding: 1rem; position: relative;
+    overflow: hidden; transition: border-color 0.2s, background 0.2s;
+    text-decoration: none; display: block;
+  }
+  .project-card::before {
+    content: ''; position: absolute; top: 0; left: 0;
+    width: 3px; height: 100%; background: var(--green);
+  }
+  .project-card.amber::before { background: var(--amber); }
+  .project-card.blue::before { background: var(--blue); }
+  .project-card.cyan::before { background: var(--cyan); }
+  .project-card:hover { border-color: var(--green); background: rgba(0,255,136,0.03); }
+  .project-card.amber:hover { border-color: var(--amber); background: rgba(255,183,0,0.03); }
+  .project-card.blue:hover { border-color: var(--blue); background: rgba(68,170,255,0.03); }
+  .project-card.cyan:hover { border-color: var(--cyan); background: rgba(0,221,204,0.03); }
+  .project-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.4rem; }
+  .project-name { font-size: 13px; font-weight: 600; color: var(--green); }
+  .project-card.amber .project-name { color: var(--amber); }
+  .project-card.blue .project-name { color: var(--blue); }
+  .project-card.cyan .project-name { color: var(--cyan); }
+  .project-link-icon { font-size: 11px; color: var(--muted); flex-shrink: 0; transition: color 0.15s; }
+  .project-card:hover .project-link-icon { color: var(--green); }
+  .project-card.amber:hover .project-link-icon { color: var(--amber); }
+  .project-card.blue:hover .project-link-icon { color: var(--blue); }
+  .project-card.cyan:hover .project-link-icon { color: var(--cyan); }
+  .project-desc { font-size: 11px; color: var(--text); line-height: 1.6; margin-bottom: 0.6rem; }
+  .project-footer { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap; }
+  .project-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+  .project-live { font-size: 10px; color: var(--muted); text-decoration: none; white-space: nowrap; }
+  .project-live:hover { color: var(--green); }
+  .project-live::before { content: '↗ '; }
+
+  @media (min-width: 600px) {
+    .projects-grid { grid-template-columns: repeat(2, 1fr); }
+    .project-name { font-size: 14px; }
+    .project-desc { font-size: 12px; }
+  }
+
+  /* ── Responsive ── */
+  @media (min-width: 600px) {
+    .terminal-body { padding: 1.5rem; }
+    main { padding: 2rem 1.5rem 4rem; }
+    .hero-ascii { font-size: 9.5px; }
+    .hero-name { font-size: 26px; }
+    .hero-role { font-size: 14px; }
+    .stat-row { display: flex; gap: 1.5rem; }
+    .stat { background: none; border: none; padding: 0; }
+    .stat-num { font-size: 22px; }
+    .stat-label { font-size: 11px; }
+    .skill-bar-label { font-size: 12px; }
+    .skill-tag { font-size: 11px; }
+    .tl-title { font-size: 15px; }
+    .tl-desc { font-size: 12px; }
+    .cert-name { font-size: 13px; }
+    .contact-value { font-size: 12px; }
+    footer { font-size: 11px; }
+  }
+
+  @media (min-width: 900px) {
+    .hero-ascii { font-size: 11px; }
+    nav { padding: 0; }
+    .nav-top { padding: 0.6rem 2rem; }
+    .nav-links-row { padding: 0.25rem 1.5rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Boot Screen -->
+<div id="boot">
+  <div id="boot-lines"></div>
+</div>
+
+<!-- Navbar -->
+<nav>
+  <div class="nav-top">
+    <div class="nav-title">~/portfolio<span>.sh</span></div>
+    <div class="nav-status">status: <span>● ONLINE</span></div>
+  </div>
+  <ul class="nav-links-row">
+    <li><a href="#about">about</a></li>
+    <li><a href="#skills">skills</a></li>
+    <li><a href="#experience">experience</a></li>
+    <li><a href="#projects">projects</a></li>
+    <li><a href="#contact">contact</a></li>
+  </ul>
+</nav>
+
+<main>
+
+  <!-- HERO -->
+  <section id="about">
+    <div class="terminal">
+      <div class="terminal-bar">
+        <div class="dot dot-red"></div>
+        <div class="dot dot-yellow"></div>
+        <div class="dot dot-green"></div>
+        <div class="terminal-title">bash — ~/portfolio — 120×40</div>
+      </div>
+      <div class="terminal-body">
+
+        <div class="prompt">
+          <span class="ps1">
+            <span class="ps1-user">user</span><span class="ps1-at">@</span><span class="ps1-host">portfolio</span><span class="ps1-path"> ~/</span><span class="ps1-dollar"> $</span>
+          </span>
+          <span class="cmd"> <span class="cmd-name">whoami</span> <span class="cmd-flag">--verbose</span></span>
+        </div>
+
+        <div class="output">
+          <pre class="hero-ascii">
+██████╗  ██████╗ ██████╗ ████████╗ ██████╗ ███████╗ ██████╗ ██╗     ██╗ ██████╗ 
+██╔══██╗██╔═══██╗██╔══██╗╚══██╔══╝██╔═══██╗██╔════╝██╔═══██╗██║     ██║██╔═══██╗
+██████╔╝██║   ██║██████╔╝   ██║   ██║   ██║█████╗  ██║   ██║██║     ██║██║   ██║
+██╔═══╝ ██║   ██║██╔══██╗   ██║   ██║   ██║██╔══╝  ██║   ██║██║     ██║██║   ██║
+██║     ╚██████╔╝██║  ██║   ██║   ╚██████╔╝██║     ╚██████╔╝███████╗██║╚██████╔╝
+╚═╝      ╚═════╝ ╚═╝  ╚═╝   ╚═╝    ╚═════╝ ╚═╝      ╚═════╝ ╚══════╝╚═╝ ╚═════╝ 
+                                                                                
+          </pre>
+
+          <div class="hero-name" id="typed-name"></div>
+          <div class="hero-role">// IT Support Specialist</div>
+
+          <div style="margin-bottom: 1.2rem;">
+            <div class="hero-meta"><strong>Location:</strong> Garut, Indonesia</div>
+            <div class="hero-meta"><strong>Status:</strong> <span class="badge badge-green">Open to Opportunities</span></div>
+            <div class="hero-meta"><strong>Experience:</strong> 3+ years in IT Support</div>
+            <div class="hero-meta"><strong>Specialization:</strong> Help Desk · Network Troubleshooting · Hardware & Software Troubleshooting</div>
+          </div>
+
+          <div class="stat-row">
+            <div class="stat"><span class="stat-num">3+ years</span><br><span class="stat-label">Customer & Technical Support Experience</span></div>
+            <div class="stat"><span class="stat-num">2000+</span><br><span class="stat-label">Customer Issues Resolved</span></div>
+            <div class="stat"><span class="stat-num">95%+</span><br><span class="stat-label">Customer Satisfaction & Service Quality</span></div>
+            
+          </div>
+        </div>
+
+        <div class="prompt" style="margin-top: 0.5rem;">
+          <span class="ps1">
+            <span class="ps1-user">user</span><span class="ps1-at">@</span><span class="ps1-host">portfolio</span><span class="ps1-path"> ~/</span><span class="ps1-dollar"> $</span>
+          </span>
+          <span class="cmd"> <span class="cursor"></span></span>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- SKILLS -->
+  <section id="skills">
+    <div class="terminal">
+      <div class="terminal-bar">
+        <div class="dot dot-red"></div>
+        <div class="dot dot-yellow"></div>
+        <div class="dot dot-green"></div>
+        <div class="terminal-title">skills.sh</div>
+      </div>
+      <div class="terminal-body">
+
+        <div class="prompt">
+          <span class="ps1">
+            <span class="ps1-user">user</span><span class="ps1-at">@</span><span class="ps1-host">portfolio</span><span class="ps1-path"> ~/</span><span class="ps1-dollar"> $</span>
+          </span>
+          <span class="cmd"> <span class="cmd-name">cat</span> <span class="cmd-arg">skills.json</span> <span class="cmd-flag">| jq '.'</span></span>
+        </div>
+
+        <div class="output">
+          <div class="comment" style="margin-bottom: 1rem;">4 domains · 22 skills</div>
+
+          <div class="skills-grid">
+
+            <div class="skill-category">
+              <div class="skill-cat-title">OS &amp; Software</div>
+              <span class="skill-tag">Windows 10/11</span>
+              <span class="skill-tag">Ubuntu</span>
+              <span class="skill-tag">Arch Linux</span>
+              <span class="skill-tag">OS Deployment</span>
+              <span class="skill-tag">Driver Management</span>
+              <span class="skill-tag">System Recovery</span>
+              <span class="skill-tag">BIOS / UEFI</span>
+            </div>
+
+            <div class="skill-category amber">
+              <div class="skill-cat-title">Hardware</div>
+              <span class="skill-tag">Laptop Repair</span>
+              <span class="skill-tag">PC Assembly</span>
+              <span class="skill-tag">Component Diagnosis</span>
+              <span class="skill-tag">HDD / SSD</span>
+              <span class="skill-tag">Peripheral Setup</span>
+              <span class="skill-tag">Preventive Maintenance</span>
+            </div>
+
+            <div class="skill-category blue">
+              <div class="skill-cat-title">Networking</div>
+              <span class="skill-tag">LAN / WAN Setup</span>
+              <span class="skill-tag">Cable Installation</span>
+              <span class="skill-tag">Wi-Fi Configuration</span>
+              <span class="skill-tag">TCP / IP Basics</span>
+              <span class="skill-tag">Network Troubleshooting</span>
+            </div>
+
+            <div class="skill-category cyan">
+              <div class="skill-cat-title">Scripting &amp; Dev</div>
+              <span class="skill-tag">Python</span>
+              <span class="skill-tag">Bash</span>
+              <span class="skill-tag">HTML / CSS</span>
+              <span class="skill-tag">React</span>
+              <span class="skill-tag">Next.js</span>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- EXPERIENCE -->
+  <section id="experience">
+    <div class="terminal">
+      <div class="terminal-bar">
+        <div class="dot dot-red"></div>
+        <div class="dot dot-yellow"></div>
+        <div class="dot dot-green"></div>
+        <div class="terminal-title">experience.log</div>
+      </div>
+      <div class="terminal-body">
+
+        <div class="prompt">
+          <span class="ps1">
+            <span class="ps1-user">user</span><span class="ps1-at">@</span><span class="ps1-host">portfolio</span><span class="ps1-path"> ~/</span><span class="ps1-dollar"> $</span>
+          </span>
+          <span class="cmd"> <span class="cmd-name">tail</span> <span class="cmd-flag">-n 100</span> <span class="cmd-arg">experience.log</span></span>
+        </div>
+
+        <div class="output">
+          <div class="timeline">
+
+            <div class="timeline-item">
+              <div class="tl-date">January 2025 — August 2025</div>
+              <div class="tl-title">IT Staff</div>
+              <div class="tl-company">▸ Pusat Laptop Nusantara · Pangandaran</div>
+              <div class="tl-desc">
+                Responsible for network installation, troubleshooting, software/hardware installation and also maintenance of laptop/computer units
+both consumer units and store units while being a customer help desk.
+              </div>
+              <div class="tl-tags">
+                <span class="badge badge-green">Networking</span>&nbsp;
+                <span class="badge badge-blue">Maintenance</span>&nbsp;
+                <span class="badge badge-amber">Troubleshooting</span>&nbsp;
+                <span class="badge badge-green">Help Desk</span>
+              </div>
+            </div>
+
+            <div class="timeline-item">
+              <div class="tl-date">June 2022 — December 2025</div>
+              <div class="tl-title">IT Staff</div>
+              <div class="tl-company">▸ Pusat Laptop Nusantara · Garut</div>
+              <div class="tl-desc">
+                Responsible for troubleshooting, software/hardware installation and also maintenance of laptop/computer units
+both consumer units and store units. In addition, I am also responsible for performing additional QC on
+laptops/computers sent by distributors before being displayed.
+              </div>
+              <div class="tl-tags">
+                <span class="badge badge-blue">Windows 10/11</span>&nbsp;
+                <span class="badge badge-amber">Maintenance</span>&nbsp;
+                <span class="badge badge-green">Help Desk</span>
+              </div>
+            </div>
+
+            <div class="timeline-item">
+              <div class="tl-date">March 2022 — September 2022</div>
+              <div class="tl-title">Marketing Division</div>
+              <div class="tl-company">▸ Pusat Laptop Nusantara · Garut</div>
+              <div class="tl-desc">
+                As marketing division, im not only responsible for achieving monthly target but also responsible as customer help desk and consultant.
+              </div>
+              <div class="tl-tags">
+                <span class="badge badge-amber">Customer Relation</span>&nbsp;
+                <span class="badge badge-blue">Selling</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROJECTS -->
+  <section id="projects">
+    <div class="terminal">
+      <div class="terminal-bar">
+        <div class="dot dot-red"></div>
+        <div class="dot dot-yellow"></div>
+        <div class="dot dot-green"></div>
+        <div class="terminal-title">projects/</div>
+      </div>
+      <div class="terminal-body">
+
+        <div class="prompt">
+          <span class="ps1">
+            <span class="ps1-user">aditya</span><span class="ps1-at">@</span><span class="ps1-host">portfolio</span><span class="ps1-path"> ~/projects</span><span class="ps1-dollar"> $</span>
+          </span>
+          <span class="cmd"> <span class="cmd-name">ls</span> <span class="cmd-flag">-la</span> <span class="cmd-flag">--group-directories-first</span></span>
+        </div>
+
+        <div class="output">
+
+          <!-- WORK PROJECTS -->
+          <div class="projects-group">
+            <div class="projects-group-label">work projects</div>
+            <div class="projects-grid">
+
+              <a class="project-card amber" href="https://github.com/Aditya-fmh/PLNGRT-Landing-Page" target="_blank">
+                <div class="project-header">
+                  <div class="project-name">🌐 PLNGRT-Landing-Page</div>
+                  <span class="project-link-icon">⎋ github</span>
+                </div>
+                <div class="project-desc">
+                  Official landing page for Pusat Laptop Nusantara Garut. 
+                  Responsive design with product showcase and store info.
+                </div>
+                <div class="project-footer">
+                  <div class="project-tags">
+                    <span class="skill-tag">React</span>
+                    <span class="skill-tag">TailwindCSS</span>
+                    <span class="skill-tag">Vite</span>
+                  </div>
+                  <span class="badge badge-green">Online</span>
+                </div>
+              </a>
+
+              <a class="project-card amber" href="https://github.com/Aditya-fmh/PLNPND-Landing-Page" target="_blank">
+                <div class="project-header">
+                  <div class="project-name">🌐 PLNPND-Landing-Page</div>
+                  <span class="project-link-icon">⎋ github</span>
+                </div>
+                <div class="project-desc">
+                  Landing page for the Pangandaran branch — laptop catalog with filters, 
+                  product specs, customer testimonials and more refined UI/UX.
+                </div>
+                <div class="project-footer">
+                  <div class="project-tags">
+                    <span class="skill-tag">Next.js</span>
+                    <span class="skill-tag">TailwindCSS</span>
+                    <span class="skill-tag">TypeScript</span>
+                  </div>
+                  <span class="badge badge-green">Online</span>
+                </div>
+              </a>
+
+              <a class="project-card" href="https://github.com/Aditya-fmh/PLNGRT-Toolkit-R" target="_blank">
+                <div class="project-header">
+                  <div class="project-name">🛠 PLNGRT-Toolkit-R</div>
+                  <span class="project-link-icon">⎋ github</span>
+                </div>
+                <div class="project-desc">
+                  Offline IT toolkit for technicians — like Ninite but fully offline. 
+                  Rebuilt with a modern Fluent Design UI. Handles app installs, driver 
+                  deployment, Windows updates, and activators.
+                </div>
+                <div class="project-footer">
+                  <div class="project-tags">
+                    <span class="skill-tag">Python</span>
+                    <span class="skill-tag">PyQt5</span>
+                    <span class="skill-tag">QFluentWidgets</span>
+                  </div>
+                  <span class="badge badge-green">v1.0 Released</span>
+                </div>
+              </a>
+            </div>
+          </div>
+
+          <!-- FUN PROJECTS -->
+          <div class="projects-group">
+            <div class="projects-group-label fun">fun projects</div>
+            <div class="projects-grid">
+
+              <a class="project-card blue" href="https://github.com/Aditya-fmh/T470s-OpenCore-Monterey" target="_blank">
+                <div class="project-header">
+                  <div class="project-name">🍎 T470s-OpenCore-Monterey</div>
+                  <span class="project-link-icon">⎋ github</span>
+                </div>
+                <div class="project-desc">
+                  OpenCore EFI config for macOS Monterey on a ThinkPad T470s (i7-7600U / 
+                  Intel HD 620). Full GPU acceleration, audio, sleep, and battery working.
+                </div>
+                <div class="project-footer">
+                  <div class="project-tags">
+                    <span class="skill-tag">OpenCore</span>
+                    <span class="skill-tag">Hackintosh</span>
+                    <span class="skill-tag">macOS</span>
+                    <span class="skill-tag">ThinkPad</span>
+                  </div>
+                </div>
+              </a>
+
+              <a class="project-card blue" href="https://github.com/Aditya-fmh/T460-Hackintosh-Monterey" target="_blank">
+                <div class="project-header">
+                  <div class="project-name">🍎 T460-Hackintosh-Monterey</div>
+                  <span class="project-link-icon">⎋ github</span>
+                </div>
+                <div class="project-desc">
+                  OpenCore EFI config for macOS Monterey on a ThinkPad T460 (i5-6300U / 
+                  Intel HD 520). Full GPU acceleration, audio, sleep, and battery working.
+                </div>
+                <div class="project-footer">
+                  <div class="project-tags">
+                    <span class="skill-tag">OpenCore</span>
+                    <span class="skill-tag">Hackintosh</span>
+                    <span class="skill-tag">macOS</span>
+                    <span class="skill-tag">ThinkPad</span>
+                  </div>
+                </div>
+              </a>
+
+              <a class="project-card cyan" href="https://github.com/Aditya-fmh/My-Arch-Install-Guide" target="_blank">
+                <div class="project-header">
+                  <div class="project-name">🐧 My-Arch-Install-Guide</div>
+                  <span class="project-link-icon">⎋ github</span>
+                </div>
+                <div class="project-desc">
+                  Personal step-by-step Arch Linux install guide — covers partitioning, 
+                  locale, GRUB bootloader, networking, and user/sudo setup.
+                </div>
+                <div class="project-footer">
+                  <div class="project-tags">
+                    <span class="skill-tag">Arch Linux</span>
+                    <span class="skill-tag">Documentation</span>
+                    <span class="skill-tag">Bash</span>
+                  </div>
+                </div>
+              </a>
+
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTACT -->
+  <section id="contact">
+    <div class="terminal">
+      <div class="terminal-bar">
+        <div class="dot dot-red"></div>
+        <div class="dot dot-yellow"></div>
+        <div class="dot dot-green"></div>
+        <div class="terminal-title">contact.sh</div>
+      </div>
+      <div class="terminal-body">
+
+        <div class="prompt">
+          <span class="ps1">
+            <span class="ps1-user">user</span><span class="ps1-at">@</span><span class="ps1-host">portfolio</span><span class="ps1-path"> ~/</span><span class="ps1-dollar"> $</span>
+          </span>
+          <span class="cmd"> <span class="cmd-name">ping</span> <span class="cmd-arg">aditya.portfolio</span> <span class="cmd-flag">-t</span></span>
+        </div>
+
+        <div class="output">
+          <div class="comment" style="margin-bottom: 1rem;">Pinging aditya.portfolio with 32 bytes of data...</div>
+
+          <div class="contact-grid">
+            <a class="contact-item" href="mailto:adityafmh@proton.me">
+              <div class="contact-icon">📧</div>
+              <div>
+                <div class="contact-label">EMAIL</div>
+                <div class="contact-value">adityafmh@proton.me</div>
+              </div>
+            </a>
+            <a class="contact-item" href="https://github.com/Aditya-fmh" target="blank">
+              <div class="contact-icon">🐙</div>
+              <div>
+                <div class="contact-label">GITHUB</div>
+                <div class="contact-value">github.com/Aditya-fmh</div>
+              </div>
+            </a>
+            <a class="contact-item" href="https://wa.link/4zfa81" target="blank">
+              <div class="contact-icon">📱</div>
+              <div>
+                <div class="contact-label">PHONE</div>
+                <div class="contact-value">+62 838 9891 3106 </div>
+              </div>
+            </a>
+          </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <span>aditya@portfolio</span>:~$ echo "Built with ♥ and lots of <span>sudo</span>"  &nbsp;|&nbsp; uptime: <span id="uptime">calculating...</span>
+</footer>
+
+<script>
+  const bootMessages = [
+    { text: 'BIOS v10.60 — System initializing...', delay: 0, cls: 'dim' },
+    { text: 'CPU: AMD Ryzen 5 5500 — OK', delay: 120, cls: '' },
+    { text: 'RAM: 16GB DDR4 — OK', delay: 240, cls: '' },
+    { text: 'Storage: 1TB NVMe SSD — OK', delay: 360, cls: '' },
+    { text: 'Network: eth0 [LINK UP] 1000Mbps', delay: 480, cls: 'blue' },
+    { text: '', delay: 580, cls: '' },
+    { text: 'Loading portfolio.sh...', delay: 640, cls: 'amber' },
+    { text: '[OK] Mounting /home/user/portfolio', delay: 760, cls: '' },
+    { text: '[OK] Loading skill modules...', delay: 880, cls: '' },
+    { text: '[OK] Verifying certifications...', delay: 1000, cls: '' },
+    { text: '[OK] Establishing connections...', delay: 1100, cls: '' },
+    { text: '', delay: 1150, cls: '' },
+    { text: '████████████████████ 100%', delay: 1200, cls: 'green' },
+    { text: '', delay: 1400, cls: '' },
+    { text: 'Welcome. Portfolio loaded successfully.', delay: 1500, cls: 'amber' },
+  ];
+
+  const bootContainer = document.getElementById('boot-lines');
+  bootMessages.forEach(msg => {
+    setTimeout(() => {
+      const line = document.createElement('div');
+      line.className = 'boot-line' + (msg.cls ? ' ' + msg.cls : '');
+      line.textContent = msg.text || '\u00A0';
+      line.style.animationDelay = '0s';
+      bootContainer.appendChild(line);
+    }, msg.delay);
+  });
+
+  setTimeout(() => {
+    document.getElementById('boot').classList.add('hidden');
+    setTimeout(() => {
+      document.getElementById('boot').style.display = 'none';
+      startTyping();
+      animateBars();
+    }, 800);
+  }, 2600);
+
+  function startTyping() {
+    const name = 'Aditya Firmanshah';
+    const el = document.getElementById('typed-name');
+    let i = 0;
+    const iv = setInterval(() => {
+      if (i < name.length) {
+        el.textContent = name.slice(0, ++i);
+      } else {
+        clearInterval(iv);
+      }
+    }, 60);
+  }
+
+  function animateBars() {
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.querySelectorAll('.skill-bar-fill').forEach(fill => {
+            fill.style.transform = `scaleX(${fill.dataset.width})`;
+          });
+        }
+      });
+    }, { threshold: 0.2 });
+    document.querySelectorAll('.terminal').forEach(t => observer.observe(t));
+  }
+
+  const startTime = Date.now();
+  function updateUptime() {
+    const s = Math.floor((Date.now() - startTime) / 1000);
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    document.getElementById('uptime').textContent = `${m}m ${sec}s`;
+  }
+  setInterval(updateUptime, 1000);
+  updateUptime();
+</script>
+</body>
+</html>
