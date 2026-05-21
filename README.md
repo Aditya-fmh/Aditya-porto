@@ -37,4 +37,3 @@ basically if a computer is broken, that's my problem to solve.
 ## reach me
 
 - 📧 adityafmh@proton.me
-- 📱 +62 838 9891 3106
